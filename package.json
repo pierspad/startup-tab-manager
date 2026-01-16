@@ -1,0 +1,18 @@
+{
+  "name": "startup-tab-manager",
+  "version": "1.0.0",
+  "description": "",
+  "main": "background.js",
+  "scripts": {
+    "start": "web-ext run --keep-profile-changes --firefox-profile=./firefox-dev-profile --ignore-files=firefox-dev-profile/**",
+    "build": "web-ext build --overwrite-dest --ignore-files=firefox-dev-profile/**",
+    "lint": "web-ext lint"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "GPL-3.0",
+  "type": "commonjs",
+  "devDependencies": {
+    "web-ext": "^9.2.0"
+  }
+}

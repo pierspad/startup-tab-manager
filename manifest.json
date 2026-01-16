@@ -1,0 +1,43 @@
+{
+  "manifest_version": 3,
+  "name": "Startup Tab Manager",
+  "version": "1.0.0",
+  "description": "Opens, pins, reorders and handles selected tabs on startup",
+  "permissions": [
+    "tabs",
+    "storage"
+  ],
+  "incognito": "spanning",
+  "background": {
+    "scripts": [
+      "background.js"
+    ]
+  },
+  "action": {
+    "default_icon": {
+      "48": "icons/icon-48.png",
+      "96": "icons/icon-96.png",
+      "128": "icons/icon-128.png"
+    },
+    "default_title": "Startup Tab Manager"
+  },
+  "icons": {
+    "48": "icons/icon-48.png",
+    "96": "icons/icon-96.png",
+    "128": "icons/icon-128.png"
+  },
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": true
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "startup-tab-manager@pierspad",
+      "strict_min_version": "142.0",
+      "data_collection_permissions": {
+        "required": ["none"], 
+        "optional": []
+      }
+    }
+  }
+}
