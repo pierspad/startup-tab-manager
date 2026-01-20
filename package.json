@@ -4,9 +4,9 @@
   "description": "",
   "main": "background.js",
   "scripts": {
-    "start": "web-ext run --keep-profile-changes --firefox-profile=./firefox-dev-profile --ignore-files=firefox-dev-profile/**",
-    "build": "web-ext build --overwrite-dest --ignore-files=firefox-dev-profile/**",
-    "lint": "web-ext lint"
+    "start": "web-ext run --keep-profile-changes --firefox-profile=./firefox-dev-profile --ignore-files=\"firefox-dev-profile/**\" \"temp_page.html\"",
+    "build": "web-ext build --overwrite-dest --ignore-files=\"firefox-dev-profile/**\" \"temp_page.html\"",
+    "lint": "web-ext lint --ignore-files=temp_page.html"
   },
   "keywords": [],
   "author": "",

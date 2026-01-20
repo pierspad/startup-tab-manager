@@ -1,8 +1,8 @@
 var browser = browser || chrome;
 
 const defaultConfig = [
-    { url: "https://archlinux.org", pinned: true, muted: false },
-    { url: "https://news.ycombinator.com", pinned: false, muted: false }
+    { url: "https://www.wikipedia.org/", pinned: true, muted: false },
+    { url: "https://www.wiktionary.org/", pinned: false, muted: true }
 ];
 
 async function restoreTabs() {
