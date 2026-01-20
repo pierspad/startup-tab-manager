@@ -1,0 +1,7 @@
+temp_page.html
+node_modules
+web-ext-artifacts
+.git
+docs
+package.json
+package-lock.json
