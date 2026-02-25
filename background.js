@@ -90,7 +90,9 @@ async function restoreTabs() {
     }
 }
 
-browser.runtime.onStartup.addListener(restoreTabs);
+browser.runtime.onStartup.addListener(() => {
+    setTimeout(restoreTabs, 800);
+});
 
 browser.runtime.onInstalled.addListener(async (details) => {
     if (details.reason === "install") {
