@@ -72,4 +72,37 @@ describe('Storage Migration & Schema Compatibility', () => {
         const result = migrateStorageConfig(unfocusedData);
         assert.strictEqual(result.windows[0].tabs[0].focus, true);
     });
+
+    test('defaults incognito to false on default and migrated windows', () => {
+        const resultNull = migrateStorageConfig(null);
+        assert.strictEqual(resultNull.windows[0].incognito, false);
+
+        const legacyResult = migrateStorageConfig({
+            savedTabs: [{ url: 'https://site.com', pinned: false, muted: false, focus: true }]
+        });
+        assert.strictEqual(legacyResult.windows[0].incognito, false);
+    });
+
+    test('preserves incognito: true when explicitly set on a window', () => {
+        const customData = {
+            savedWindows: [
+                {
+                    id: 'win-normal',
+                    name: 'Normal Window',
+                    incognito: false,
+                    tabs: [{ url: 'https://news.com', pinned: false, muted: false, focus: true }]
+                },
+                {
+                    id: 'win-private',
+                    name: 'Private Window',
+                    incognito: true,
+                    tabs: [{ url: 'https://search.com', pinned: false, muted: false, focus: true }]
+                }
+            ]
+        };
+
+        const result = migrateStorageConfig(customData);
+        assert.strictEqual(result.windows[0].incognito, false);
+        assert.strictEqual(result.windows[1].incognito, true);
+    });
 });

@@ -12,7 +12,8 @@ const defaultWindows = [
     {
         id: "win-1",
         name: "Window 1",
-        tabs: defaultConfig
+        tabs: defaultConfig,
+        incognito: false
     }
 ];
 
@@ -115,8 +116,9 @@ function migrateStorageConfig(data) {
         }
     }
 
-    // Ensure focus and sorting integrity
+    // Ensure focus, incognito, and sorting integrity
     windows.forEach(win => {
+        win.incognito = !!win.incognito;
         sortWindowTabs(win);
         if (win.tabs && win.tabs.length > 0 && !win.tabs.some(t => t.focus)) {
             win.tabs[0].focus = true;

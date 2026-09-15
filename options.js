@@ -64,7 +64,8 @@ const icons = {
     globe: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>`,
     plus: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>`,
     import: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>`,
-    edit: `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>`
+    edit: `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>`,
+    incognito: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10h16M7 10l1.8-6h6.4l1.8 6"></path><circle cx="7.5" cy="15.5" r="3.5"></circle><circle cx="16.5" cy="15.5" r="3.5"></circle><line x1="11" y1="15.5" x2="13" y2="15.5"></line></svg>`
 };
 
 const domParser = new DOMParser();
@@ -75,6 +76,31 @@ function getIcon(name) {
 }
 
 let activeWindowIndex = 0;
+
+async function checkIncognitoPermission(showNotificationIfMissing = false) {
+    const banner = document.getElementById('incognito-permission-banner');
+    if (!banner) return;
+
+    let isAllowed = false;
+    try {
+        if (typeof browser !== 'undefined' && browser.extension && browser.extension.isAllowedIncognitoAccess) {
+            isAllowed = await browser.extension.isAllowedIncognitoAccess();
+        }
+    } catch (e) {
+        console.warn("Startup Tab Manager: Could not check incognito permission:", e);
+    }
+
+    const hasIncognitoWindow = savedWindows.some(w => !!w.incognito);
+
+    if (hasIncognitoWindow && !isAllowed) {
+        banner.classList.remove('hidden');
+        if (showNotificationIfMissing) {
+            showNotification("Enable 'Run in Private Windows' in about:addons");
+        }
+    } else {
+        banner.classList.add('hidden');
+    }
+}
 
 async function init() {
     const data = await browser.storage.local.get(["savedWindows", "savedTabs", "closeOtherTabs"]);
@@ -118,6 +144,7 @@ async function init() {
         savedWindows.push({
             id: "win-" + Date.now(),
             name: `Window ${newIndex}`,
+            incognito: false,
             tabs: [
                 { url: "", pinned: false, muted: false, focus: true }
             ]
@@ -128,6 +155,14 @@ async function init() {
     });
 
     importAllBtn.addEventListener('click', importAllWindows);
+
+    const dismissBannerBtn = document.getElementById('dismiss-incognito-banner');
+    if (dismissBannerBtn) {
+        dismissBannerBtn.addEventListener('click', () => {
+            const banner = document.getElementById('incognito-permission-banner');
+            if (banner) banner.classList.add('hidden');
+        });
+    }
 
     try {
         const manifest = (typeof browser !== 'undefined' && browser.runtime && browser.runtime.getManifest)
@@ -142,6 +177,7 @@ async function init() {
     } catch (e) {}
 
     render();
+    await checkIncognitoPermission();
 }
 
 function save(notify = true, message = "Saved!") {
@@ -228,16 +264,18 @@ function updateDeckControls() {
     if (counterEl) {
         const currentWin = savedWindows[activeWindowIndex];
         const winTitle = currentWin && currentWin.name ? currentWin.name : `Window ${activeWindowIndex + 1}`;
-        counterEl.textContent = `#${activeWindowIndex + 1} • ${winTitle} (${activeWindowIndex + 1} of ${total})`;
+        const incogTag = currentWin && currentWin.incognito ? ' 🕶️ Private' : '';
+        counterEl.textContent = `#${activeWindowIndex + 1} • ${winTitle}${incogTag} (${activeWindowIndex + 1} of ${total})`;
     }
 
     if (pillsContainer) {
         pillsContainer.innerHTML = '';
         for (let i = 0; i < total; i++) {
+            const isIncog = !!savedWindows[i]?.incognito;
             const pill = document.createElement('div');
-            pill.className = `deck-pill ${i === activeWindowIndex ? 'active' : ''}`;
+            pill.className = `deck-pill ${i === activeWindowIndex ? 'active' : ''} ${isIncog ? 'incognito' : ''}`;
             const pTitle = savedWindows[i]?.name || `Window ${i + 1}`;
-            pill.title = `#${i + 1}: ${pTitle}`;
+            pill.title = `#${i + 1}: ${pTitle}${isIncog ? ' (Private)' : ''}`;
             pill.onclick = () => {
                 if (i !== activeWindowIndex) {
                     goToWindow(i);
@@ -288,7 +326,7 @@ function render() {
 
 function renderWindowCard(win, winIndex) {
     const card = document.createElement('div');
-    card.className = 'window-card';
+    card.className = `window-card ${win.incognito ? 'is-incognito' : ''}`;
     card.dataset.winIndex = winIndex;
 
     sortWindowTabs(win);
@@ -312,7 +350,7 @@ function renderWindowCard(win, winIndex) {
 
     const winIcon = document.createElement('span');
     winIcon.className = 'window-icon';
-    winIcon.appendChild(getIcon('window'));
+    winIcon.appendChild(getIcon(win.incognito ? 'incognito' : 'window'));
 
     // Renameable input wrapper with pencil icon
     const nameWrapper = document.createElement('div');
@@ -345,6 +383,17 @@ function renderWindowCard(win, winIndex) {
         titleArea.appendChild(mainBadge);
     }
 
+    if (win.incognito) {
+        const incogBadge = document.createElement('span');
+        incogBadge.className = 'window-badge incognito-badge';
+        incogBadge.appendChild(getIcon('incognito'));
+        const incogBadgeText = document.createElement('span');
+        incogBadgeText.textContent = 'Private';
+        incogBadge.appendChild(incogBadgeText);
+        incogBadge.title = 'Configured to open in Private Browsing mode';
+        titleArea.appendChild(incogBadge);
+    }
+
     const countBadge = document.createElement('span');
     countBadge.className = 'window-badge';
     countBadge.textContent = `${totalTabs} tab${totalTabs === 1 ? '' : 's'}`;
@@ -352,6 +401,25 @@ function renderWindowCard(win, winIndex) {
 
     const actionsArea = document.createElement('div');
     actionsArea.className = 'window-actions';
+
+    // Incognito / Private Window Toggle
+    const incognitoBtn = document.createElement('button');
+    incognitoBtn.type = 'button';
+    incognitoBtn.className = `window-btn incognito-toggle ${win.incognito ? 'active' : ''}`;
+    incognitoBtn.appendChild(getIcon('incognito'));
+    const incognitoText = document.createElement('span');
+    incognitoText.textContent = win.incognito ? 'Private Window' : 'Normal Window';
+    incognitoBtn.appendChild(incognitoText);
+    incognitoBtn.title = win.incognito
+        ? "Window will open in Private Browsing mode (Click to switch to Normal)"
+        : "Window will open in Normal mode (Click to switch to Private Browsing)";
+
+    incognitoBtn.onclick = async () => {
+        win.incognito = !win.incognito;
+        save(false);
+        render();
+        await checkIncognitoPermission(win.incognito);
+    };
 
     const importWinBtn = document.createElement('button');
     importWinBtn.className = 'window-btn';
@@ -362,7 +430,7 @@ function renderWindowCard(win, winIndex) {
     importWinBtn.title = "Import all open tabs from your active window into this list";
     importWinBtn.onclick = () => importTabsToWindow(winIndex);
 
-    actionsArea.appendChild(importWinBtn);
+    actionsArea.append(incognitoBtn, importWinBtn);
 
     if (savedWindows.length > 1) {
         const deleteWinBtn = document.createElement('button');
@@ -381,6 +449,7 @@ function renderWindowCard(win, winIndex) {
             }
             save(false);
             render();
+            checkIncognitoPermission();
             showUndoSnackbar(
                 `Removed "${removedWindow.name}" (${removedWindow.tabs.length} tabs)`,
                 "Window Deleted",
@@ -389,6 +458,7 @@ function renderWindowCard(win, winIndex) {
                     activeWindowIndex = removedIndex;
                     save(false);
                     render();
+                    checkIncognitoPermission();
                     showNotification("Window Restored!");
                 }
             );
@@ -703,6 +773,13 @@ async function importTabsToWindow(winIndex) {
         }
 
         const win = savedWindows[winIndex];
+        try {
+            const currentWin = await browser.windows.getCurrent();
+            if (currentWin && typeof currentWin.incognito === 'boolean') {
+                win.incognito = currentWin.incognito;
+            }
+        } catch (winErr) {}
+
         // If window only has empty placeholder tabs, replace them
         const hasOnlyEmptyTabs = win.tabs.length === 1 && win.tabs[0].url.trim() === "";
         if (hasOnlyEmptyTabs) {
@@ -718,6 +795,7 @@ async function importTabsToWindow(winIndex) {
         sortWindowTabs(win);
         save(true, `Imported ${newTabs.length} tabs into ${win.name}!`);
         render();
+        await checkIncognitoPermission();
     } catch (e) {
         console.error("Error importing tabs:", e);
         showNotification("Failed to import tabs");
@@ -747,6 +825,7 @@ async function importAllWindows() {
                 newWindows.push({
                     id: "win-" + (bWin.id || Date.now() + Math.random()),
                     name: winIndex === 1 ? "Window 1" : `Window ${winIndex}`,
+                    incognito: !!bWin.incognito,
                     tabs
                 });
                 winIndex++;
@@ -761,6 +840,7 @@ async function importAllWindows() {
         savedWindows = newWindows;
         save(true, `Imported ${newWindows.length} windows!`);
         render();
+        await checkIncognitoPermission();
     } catch (e) {
         console.error("Error importing windows:", e);
         showNotification("Failed to import windows");

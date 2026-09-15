@@ -15,6 +15,25 @@
             <p class="subtitle">Configure windows and tabs to restore automatically on browser startup</p>
         </header>
 
+        <!-- Incognito Permission Warning Banner -->
+        <div id="incognito-permission-banner" class="incognito-banner hidden" role="alert">
+            <div class="incognito-banner-main">
+                <div class="incognito-banner-icon">
+                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M4 10h16M7 10l1.8-6h6.4l1.8 6"></path>
+                        <circle cx="7.5" cy="15.5" r="3.5"></circle>
+                        <circle cx="16.5" cy="15.5" r="3.5"></circle>
+                        <line x1="11" y1="15.5" x2="13" y2="15.5"></line>
+                    </svg>
+                </div>
+                <div class="incognito-banner-text">
+                    <strong>Private Windows Permission Required:</strong>
+                    <span>You have configured a window to open in Private Browsing mode. In Firefox, open <code>about:addons</code> &rarr; click <strong>Startup Tab Manager</strong> &rarr; and toggle <strong>"Run in Private Windows"</strong> to <strong>Allow</strong>.</span>
+                </div>
+            </div>
+            <button id="dismiss-incognito-banner" class="incognito-banner-close" title="Dismiss notice" aria-label="Dismiss">&times;</button>
+        </div>
+
         <!-- Window Deck Navigation Controls -->
         <div class="deck-controls" id="deck-controls">
             <button id="deck-prev-btn" class="deck-nav-btn" title="Previous window" aria-label="Previous window">

@@ -62,6 +62,71 @@ p.subtitle {
     margin: 0;
 }
 
+/* Incognito Permission Alert Banner */
+.incognito-banner {
+    background: linear-gradient(135deg, rgba(162, 155, 254, 0.12) 0%, rgba(108, 92, 231, 0.18) 100%);
+    border: 1px solid rgba(162, 155, 254, 0.35);
+    border-radius: var(--border-radius-sm);
+    padding: 12px 16px;
+    margin-bottom: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    animation: fadeIn 0.3s ease;
+}
+
+.incognito-banner.hidden {
+    display: none !important;
+}
+
+.incognito-banner-main {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.incognito-banner-icon {
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.incognito-banner-text {
+    font-size: 0.88rem;
+    line-height: 1.45;
+    color: var(--text-primary);
+}
+
+.incognito-banner-text strong {
+    color: #fff;
+    margin-right: 4px;
+}
+
+.incognito-banner-text code {
+    background: rgba(0, 0, 0, 0.35);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.85em;
+    color: var(--accent);
+}
+
+.incognito-banner-close {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 1.4rem;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0 4px;
+    transition: color 0.2s;
+}
+
+.incognito-banner-close:hover {
+    color: var(--text-primary);
+}
+
 /* Deck Navigation Controls */
 .deck-controls {
     display: flex;
@@ -181,6 +246,11 @@ p.subtitle {
     border-color: var(--card-border-hover);
 }
 
+.window-card.is-incognito {
+    border-color: rgba(162, 155, 254, 0.45);
+    box-shadow: 0 8px 28px rgba(108, 92, 231, 0.16);
+}
+
 .window-header {
     display: flex;
     justify-content: space-between;
@@ -285,6 +355,15 @@ p.subtitle {
     border: 1px solid var(--accent-border);
 }
 
+.window-badge.incognito-badge {
+    background: rgba(162, 155, 254, 0.18);
+    color: #dedcff;
+    border: 1px solid rgba(162, 155, 254, 0.4);
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
 .window-actions {
     display: flex;
     align-items: center;
@@ -315,6 +394,22 @@ p.subtitle {
     background: rgba(255, 255, 255, 0.05);
     color: var(--text-primary);
     border-color: var(--card-border-hover);
+}
+
+.window-btn.incognito-toggle {
+    transition: all 0.2s;
+}
+
+.window-btn.incognito-toggle.active {
+    background: rgba(162, 155, 254, 0.16);
+    color: #e2e0ff;
+    border-color: rgba(162, 155, 254, 0.42);
+    font-weight: 600;
+}
+
+.window-btn.incognito-toggle.active:hover {
+    background: rgba(162, 155, 254, 0.28);
+    border-color: var(--accent);
 }
 
 .window-btn.delete-win {

@@ -87,16 +87,25 @@ async function createAndRestoreWindow(windowConfig) {
         return a.pinned ? -1 : 1;
     });
 
+    const wantIncognito = !!windowConfig.incognito;
+
     try {
         const firstTab = tabs[0];
         let newWindow;
         try {
             newWindow = await browser.windows.create({
-                url: firstTab.url || undefined
+                url: firstTab.url || undefined,
+                incognito: wantIncognito
             });
         } catch (winCreateErr) {
-            console.warn(`Startup Tab Manager: Failed to open window with url ${firstTab.url}, opening blank window instead:`, winCreateErr.message);
-            newWindow = await browser.windows.create({});
+            console.warn(`Startup Tab Manager: Failed to open window (incognito=${wantIncognito}):`, winCreateErr.message);
+            try {
+                newWindow = await browser.windows.create({
+                    url: firstTab.url || undefined
+                });
+            } catch (fallbackErr) {
+                newWindow = await browser.windows.create({});
+            }
         }
 
         // Handle initial tab properties
@@ -162,12 +171,21 @@ async function restoreAllTabs() {
                 return a.pinned ? -1 : 1;
             });
 
-            if (i < openWindows.length) {
+            // If an open window exists and its incognito status matches the desired status:
+            if (i < openWindows.length && !!openWindows[i].incognito === !!winConfig.incognito) {
                 // Restore into existing window
                 await restoreTabsInWindow(openWindows[i].id, sortedTabs, i === 0 ? closeOtherTabs : false);
             } else {
-                // Create new window for additional configured windows
-                await createAndRestoreWindow({ ...winConfig, tabs: sortedTabs });
+                // Create new window with matching incognito setting
+                const newWin = await createAndRestoreWindow({ ...winConfig, tabs: sortedTabs });
+                // If this was window 0 (configured as incognito) and the initial startup window was non-incognito:
+                if (i === 0 && closeOtherTabs && newWin && openWindows[0] && !openWindows[0].incognito) {
+                    try {
+                        await browser.windows.remove(openWindows[0].id);
+                    } catch (closeErr) {
+                        console.warn("Startup Tab Manager: Could not close initial default window:", closeErr.message);
+                    }
+                }
             }
         }
     } catch (e) {
