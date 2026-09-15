@@ -10,6 +10,7 @@
   "incognito": "spanning",
   "background": {
     "scripts": [
+      "utils.js",
       "background.js"
     ]
   },

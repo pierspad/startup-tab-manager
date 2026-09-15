@@ -1,18 +1,33 @@
 {
   "name": "startup-tab-manager",
-  "version": "1.0.0",
-  "description": "",
+  "version": "1.0.2",
+  "description": "Opens, pins, reorders and handles selected tabs on startup across multiple windows",
   "main": "background.js",
   "scripts": {
-    "start": "web-ext run --keep-profile-changes --firefox-profile=./firefox-dev-profile --ignore-files=\"firefox-dev-profile/**\" \"temp_page.html\"",
-    "build": "web-ext build --overwrite-dest --ignore-files=\"firefox-dev-profile/**\" \"temp_page.html\"",
-    "lint": "web-ext lint --ignore-files=temp_page.html"
+    "start": "web-ext run --keep-profile-changes --firefox-profile=./firefox-dev-profile --profile-create-if-missing",
+    "start:clean": "web-ext run",
+    "build": "web-ext build --overwrite-dest",
+    "lint": "web-ext lint",
+    "test": "node --test tests/**/*.test.js",
+    "test:watch": "node --test --watch tests/**/*.test.js",
+    "check": "npm run lint && npm test",
+    "prepare": "node scripts/setup-hooks.js"
   },
-  "keywords": [],
+  "keywords": [
+    "firefox",
+    "webextension",
+    "startup",
+    "tabs",
+    "windows",
+    "manager"
+  ],
   "author": "",
   "license": "GPL-3.0",
   "type": "commonjs",
   "devDependencies": {
+    "@semantic-release/exec": "^7.1.0",
+    "@semantic-release/git": "^11.0.1",
+    "semantic-release": "^25.0.9",
     "web-ext": "^9.2.0"
   }
 }
