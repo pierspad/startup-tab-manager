@@ -63,7 +63,8 @@ const icons = {
     window: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>`,
     globe: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>`,
     plus: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>`,
-    import: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>`
+    import: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>`,
+    edit: `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>`
 };
 
 const domParser = new DOMParser();
@@ -74,7 +75,6 @@ function getIcon(name) {
 }
 
 let activeWindowIndex = 0;
-let isDeckTransitioning = false;
 
 async function init() {
     const data = await browser.storage.local.get(["savedWindows", "savedTabs", "closeOtherTabs"]);
@@ -177,11 +177,11 @@ function showUndoSnackbar(message, headline = "Item Deleted", onUndo) {
     const messageEl = document.getElementById('snack-message');
     if (messageEl) messageEl.textContent = message;
 
-    const fuseProgress = document.getElementById('fuse-progress');
-    if (fuseProgress) {
-        fuseProgress.style.animation = 'none';
-        void fuseProgress.offsetHeight; // force reflow to restart animation
-        fuseProgress.style.animation = 'fuseBurn 4s linear forwards';
+    const fuseFill = document.getElementById('fuse-fill');
+    if (fuseFill) {
+        fuseFill.style.animation = 'none';
+        void fuseFill.offsetHeight; // force reflow to restart animation
+        fuseFill.style.animation = 'fuseDrain 4s linear forwards';
     }
 
     const undoBtn = document.getElementById('snack-undo-btn');
@@ -217,7 +217,7 @@ function updateDeckControls() {
     if (activeWindowIndex >= total) activeWindowIndex = total - 1;
     if (activeWindowIndex < 0) activeWindowIndex = 0;
 
-    // Non-circular navigation boundaries
+    // Non-circular navigation boundaries - always enabled unless at boundary
     if (prevBtn) {
         prevBtn.disabled = (activeWindowIndex <= 0);
     }
@@ -228,7 +228,7 @@ function updateDeckControls() {
     if (counterEl) {
         const currentWin = savedWindows[activeWindowIndex];
         const winTitle = currentWin && currentWin.name ? currentWin.name : `Window ${activeWindowIndex + 1}`;
-        counterEl.textContent = `${winTitle} (${activeWindowIndex + 1} of ${total})`;
+        counterEl.textContent = `#${activeWindowIndex + 1} • ${winTitle} (${activeWindowIndex + 1} of ${total})`;
     }
 
     if (pillsContainer) {
@@ -236,9 +236,10 @@ function updateDeckControls() {
         for (let i = 0; i < total; i++) {
             const pill = document.createElement('div');
             pill.className = `deck-pill ${i === activeWindowIndex ? 'active' : ''}`;
-            pill.title = savedWindows[i]?.name || `Window ${i + 1}`;
+            const pTitle = savedWindows[i]?.name || `Window ${i + 1}`;
+            pill.title = `#${i + 1}: ${pTitle}`;
             pill.onclick = () => {
-                if (i !== activeWindowIndex && !isDeckTransitioning) {
+                if (i !== activeWindowIndex) {
                     goToWindow(i);
                 }
             };
@@ -247,83 +248,24 @@ function updateDeckControls() {
     }
 }
 
-function applyDeckClasses() {
-    const cards = windowsContainer.querySelectorAll('.window-card');
-    cards.forEach((card, idx) => {
-        card.classList.remove(
-            'deck-card-active',
-            'deck-card-under-1',
-            'deck-card-under-2',
-            'deck-card-hidden',
-            'deck-card-discarded-left',
-            'anim-slide-out-left',
-            'anim-surface-from-under',
-            'anim-slide-in-left',
-            'anim-sink-to-under'
-        );
-
-        if (idx === activeWindowIndex) {
-            card.classList.add('deck-card-active');
-        } else if (idx === activeWindowIndex + 1) {
-            card.classList.add('deck-card-under-1');
-        } else if (idx === activeWindowIndex + 2) {
-            card.classList.add('deck-card-under-2');
-        } else if (idx > activeWindowIndex + 2) {
-            card.classList.add('deck-card-hidden');
-        } else if (idx < activeWindowIndex) {
-            card.classList.add('deck-card-discarded-left');
+function updateCarousel(animate = true) {
+    if (windowsContainer) {
+        if (!animate) {
+            windowsContainer.style.transition = 'none';
         }
-    });
+        windowsContainer.style.transform = `translateX(-${activeWindowIndex * 100}%)`;
+        if (!animate) {
+            void windowsContainer.offsetHeight; // force reflow
+            windowsContainer.style.transition = '';
+        }
+    }
+    updateDeckControls();
 }
 
 function goToWindow(targetIndex) {
-    if (isDeckTransitioning) return;
     if (targetIndex < 0 || targetIndex >= savedWindows.length) return;
-    if (targetIndex === activeWindowIndex) return;
-
-    const direction = targetIndex > activeWindowIndex ? 'next' : 'prev';
-    isDeckTransitioning = true;
-
-    const cards = windowsContainer.querySelectorAll('.window-card');
-    const currentCard = cards[activeWindowIndex];
-    const targetCard = cards[targetIndex];
-
-    if (direction === 'next' && currentCard && targetCard) {
-        currentCard.classList.remove('deck-card-active');
-        currentCard.classList.add('anim-slide-out-left');
-
-        targetCard.classList.remove('deck-card-under-1', 'deck-card-under-2', 'deck-card-hidden');
-        targetCard.classList.add('anim-surface-from-under', 'deck-card-active');
-
-        setTimeout(() => {
-            currentCard.classList.remove('anim-slide-out-left');
-            targetCard.classList.remove('anim-surface-from-under');
-            activeWindowIndex = targetIndex;
-            isDeckTransitioning = false;
-            applyDeckClasses();
-            updateDeckControls();
-        }, 380);
-    } else if (direction === 'prev' && currentCard && targetCard) {
-        targetCard.classList.remove('deck-card-discarded-left', 'deck-card-hidden');
-        targetCard.classList.add('anim-slide-in-left', 'deck-card-active');
-
-        currentCard.classList.remove('deck-card-active');
-        currentCard.classList.add('anim-sink-to-under');
-
-        setTimeout(() => {
-            targetCard.classList.remove('anim-slide-in-left');
-            currentCard.classList.remove('anim-sink-to-under');
-            activeWindowIndex = targetIndex;
-            isDeckTransitioning = false;
-            applyDeckClasses();
-            updateDeckControls();
-        }, 380);
-    } else {
-        activeWindowIndex = targetIndex;
-        isDeckTransitioning = false;
-        applyDeckClasses();
-        updateDeckControls();
-    }
+    activeWindowIndex = targetIndex;
+    updateCarousel(true);
 }
 
 function render() {
@@ -341,8 +283,7 @@ function render() {
         windowsContainer.appendChild(winCard);
     });
 
-    applyDeckClasses();
-    updateDeckControls();
+    updateCarousel(false);
 }
 
 function renderWindowCard(win, winIndex) {
@@ -363,22 +304,39 @@ function renderWindowCard(win, winIndex) {
     const titleArea = document.createElement('div');
     titleArea.className = 'window-title-area';
 
+    // Sequential ordered number badge (#1, #2, ...)
+    const orderBadge = document.createElement('span');
+    orderBadge.className = 'window-order-badge';
+    orderBadge.textContent = `#${winIndex + 1}`;
+    orderBadge.title = `Window index ${winIndex + 1}`;
+
     const winIcon = document.createElement('span');
     winIcon.className = 'window-icon';
     winIcon.appendChild(getIcon('window'));
+
+    // Renameable input wrapper with pencil icon
+    const nameWrapper = document.createElement('div');
+    nameWrapper.className = 'window-name-wrapper';
 
     const nameInput = document.createElement('input');
     nameInput.type = 'text';
     nameInput.className = 'window-name-input';
     nameInput.value = win.name || `Window ${winIndex + 1}`;
     nameInput.title = "Click to rename window";
+    nameInput.placeholder = `Window ${winIndex + 1}`;
     nameInput.onchange = (e) => {
         win.name = e.target.value.trim() || `Window ${winIndex + 1}`;
         save(false);
         updateDeckControls();
     };
 
-    titleArea.append(winIcon, nameInput);
+    const renameIcon = document.createElement('span');
+    renameIcon.className = 'window-rename-icon';
+    renameIcon.title = "Rename window";
+    renameIcon.appendChild(getIcon('edit'));
+
+    nameWrapper.append(nameInput, renameIcon);
+    titleArea.append(orderBadge, winIcon, nameWrapper);
 
     if (winIndex === 0) {
         const mainBadge = document.createElement('span');

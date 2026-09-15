@@ -37,9 +37,9 @@
             </button>
         </div>
 
-        <div class="deck-perspective-stage">
-            <main id="windows-container" class="deck-stack-container">
-                <!-- Windows and their tab sections dynamically rendered here -->
+        <div class="carousel-viewport" id="carousel-viewport">
+            <main id="windows-container" class="carousel-track">
+                <!-- Windows dynamically rendered as carousel slides -->
             </main>
         </div>
 
@@ -110,15 +110,10 @@
 
     <div id="notification" class="notification" role="status" aria-live="polite">
         <div class="notification-fuse-container" id="notification-fuse" title="Expiring undo timer">
-            <svg class="fuse-ring-svg" viewBox="0 0 36 36">
-                <circle class="fuse-ring-track" cx="18" cy="18" r="14" />
-                <circle class="fuse-ring-progress" id="fuse-progress" cx="18" cy="18" r="14" />
+            <svg class="fuse-svg" viewBox="0 0 32 32">
+                <circle class="fuse-bg" cx="16" cy="16" r="14" />
+                <circle id="fuse-fill" class="fuse-fill" cx="16" cy="16" r="7" transform="rotate(-90 16 16)" />
             </svg>
-            <div class="fuse-spark-icon">
-                <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor">
-                    <path d="M12 2c.5 3-2 5-2 8 0 2.2 1.8 4 4 4 2.2 0 4-1.8 4-4 0-4-3-6-3-9 4.5 1.5 7 5.5 7 10 0 6.1-4.9 11-11 11S1 17.1 1 11c0-4.5 2.5-8.5 7-10 0 3 2.5 5 4 1z"/>
-                </svg>
-            </div>
         </div>
         <div class="snack-body">
             <div id="snack-headline" class="snack-headline">Deleted</div>
