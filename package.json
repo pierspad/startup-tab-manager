@@ -1,6 +1,6 @@
 {
   "name": "startup-tab-manager",
-  "version": "1.1.0-dev.2",
+  "version": "1.1.0-dev.3",
   "description": "Opens, pins, reorders and handles selected tabs on startup across multiple windows",
   "main": "background.js",
   "scripts": {
