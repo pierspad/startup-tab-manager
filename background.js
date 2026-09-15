@@ -21,50 +21,58 @@ async function restoreTabsInWindow(windowId, configTabs, shouldCloseOthers = fal
         const targetNorm = normalizeUrl(target.url);
         const urlToOpen = target.url || undefined;
 
-        const existingTab = currentTabs.find(t => {
-            if (reusedTabIds.has(t.id)) return false;
-            return normalizeUrl(t.url) === targetNorm;
-        });
-
-        if (existingTab) {
-            reusedTabIds.add(existingTab.id);
-            finalTabIds.push(existingTab.id);
-
-            await browser.tabs.move(existingTab.id, { index: i });
-            await browser.tabs.update(existingTab.id, {
-                pinned: !!target.pinned,
-                muted: !!target.muted
+        try {
+            const existingTab = currentTabs.find(t => {
+                if (reusedTabIds.has(t.id)) return false;
+                return normalizeUrl(t.url) === targetNorm;
             });
 
-            if (target.focus) {
-                await browser.tabs.update(existingTab.id, { active: true });
-            }
-        } else {
-            const isActive = !!target.focus;
-            const newTab = await browser.tabs.create({
-                url: urlToOpen,
-                index: i,
-                pinned: !!target.pinned,
-                active: isActive,
-                windowId: windowId
-            });
-            finalTabIds.push(newTab.id);
+            if (existingTab) {
+                reusedTabIds.add(existingTab.id);
+                finalTabIds.push(existingTab.id);
 
-            if (target.muted) {
-                await browser.tabs.update(newTab.id, { muted: true });
+                await browser.tabs.move(existingTab.id, { index: i }).catch(() => {});
+                await browser.tabs.update(existingTab.id, {
+                    pinned: !!target.pinned,
+                    muted: !!target.muted
+                }).catch(() => {});
+
+                if (target.focus) {
+                    await browser.tabs.update(existingTab.id, { active: true }).catch(() => {});
+                }
+            } else {
+                const isActive = !!target.focus;
+                const newTab = await browser.tabs.create({
+                    url: urlToOpen,
+                    index: i,
+                    pinned: !!target.pinned,
+                    active: isActive,
+                    windowId: windowId
+                });
+                finalTabIds.push(newTab.id);
+
+                if (target.muted) {
+                    await browser.tabs.update(newTab.id, { muted: true }).catch(() => {});
+                }
             }
+        } catch (tabErr) {
+            console.warn(`Startup Tab Manager: Could not restore tab #${i + 1} (${target.url || "blank"}):`, tabErr.message);
         }
     }
 
     if (shouldCloseOthers) {
-        const allTabsNow = await browser.tabs.query({ windowId });
-        const tabsToRemove = allTabsNow
-            .filter(t => !finalTabIds.includes(t.id))
-            .filter(t => !t.url.startsWith(browser.runtime.getURL("")))
-            .map(t => t.id);
+        try {
+            const allTabsNow = await browser.tabs.query({ windowId });
+            const tabsToRemove = allTabsNow
+                .filter(t => !finalTabIds.includes(t.id))
+                .filter(t => !t.url.startsWith(browser.runtime.getURL("")))
+                .map(t => t.id);
 
-        if (tabsToRemove.length > 0) {
-            await browser.tabs.remove(tabsToRemove);
+            if (tabsToRemove.length > 0) {
+                await browser.tabs.remove(tabsToRemove).catch(() => {});
+            }
+        } catch (closeErr) {
+            console.warn("Startup Tab Manager: Error closing extra tabs:", closeErr.message);
         }
     }
 
@@ -79,39 +87,58 @@ async function createAndRestoreWindow(windowConfig) {
         return a.pinned ? -1 : 1;
     });
 
-    const firstTab = tabs[0];
-    const newWindow = await browser.windows.create({
-        url: firstTab.url || undefined
-    });
-
-    // Handle initial tab properties
-    const winTabs = await browser.tabs.query({ windowId: newWindow.id });
-    if (winTabs.length > 0) {
-        const initialTab = winTabs[0];
-        await browser.tabs.update(initialTab.id, {
-            pinned: !!firstTab.pinned,
-            muted: !!firstTab.muted,
-            active: !!firstTab.focus
-        });
-    }
-
-    // Create remaining tabs
-    for (let i = 1; i < tabs.length; i++) {
-        const target = tabs[i];
-        const newTab = await browser.tabs.create({
-            windowId: newWindow.id,
-            url: target.url || undefined,
-            index: i,
-            pinned: !!target.pinned,
-            active: !!target.focus
-        });
-
-        if (target.muted) {
-            await browser.tabs.update(newTab.id, { muted: true });
+    try {
+        const firstTab = tabs[0];
+        let newWindow;
+        try {
+            newWindow = await browser.windows.create({
+                url: firstTab.url || undefined
+            });
+        } catch (winCreateErr) {
+            console.warn(`Startup Tab Manager: Failed to open window with url ${firstTab.url}, opening blank window instead:`, winCreateErr.message);
+            newWindow = await browser.windows.create({});
         }
-    }
 
-    return newWindow;
+        // Handle initial tab properties
+        try {
+            const winTabs = await browser.tabs.query({ windowId: newWindow.id });
+            if (winTabs.length > 0) {
+                const initialTab = winTabs[0];
+                await browser.tabs.update(initialTab.id, {
+                    pinned: !!firstTab.pinned,
+                    muted: !!firstTab.muted,
+                    active: !!firstTab.focus
+                }).catch(() => {});
+            }
+        } catch (initTabErr) {
+            console.warn("Startup Tab Manager: Could not update initial tab:", initTabErr.message);
+        }
+
+        // Create remaining tabs
+        for (let i = 1; i < tabs.length; i++) {
+            const target = tabs[i];
+            try {
+                const newTab = await browser.tabs.create({
+                    windowId: newWindow.id,
+                    url: target.url || undefined,
+                    index: i,
+                    pinned: !!target.pinned,
+                    active: !!target.focus
+                });
+
+                if (target.muted) {
+                    await browser.tabs.update(newTab.id, { muted: true }).catch(() => {});
+                }
+            } catch (extraTabErr) {
+                console.warn(`Startup Tab Manager: Could not restore tab #${i + 1} (${target.url || "blank"}):`, extraTabErr.message);
+            }
+        }
+
+        return newWindow;
+    } catch (err) {
+        console.error("Startup Tab Manager: Error creating and restoring window:", err);
+        return null;
+    }
 }
 
 let isRestoring = false;

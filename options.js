@@ -73,6 +73,9 @@ function getIcon(name) {
     return domParser.parseFromString(xml, "image/svg+xml").documentElement;
 }
 
+let activeWindowIndex = 0;
+let isDeckTransitioning = false;
+
 async function init() {
     const data = await browser.storage.local.get(["savedWindows", "savedTabs", "closeOtherTabs"]);
     const { windows, wasMigrated } = migrateStorageConfig(data);
@@ -91,6 +94,25 @@ async function init() {
         });
     }
 
+    const deckPrevBtn = document.getElementById('deck-prev-btn');
+    const deckNextBtn = document.getElementById('deck-next-btn');
+
+    if (deckPrevBtn) {
+        deckPrevBtn.addEventListener('click', () => {
+            if (activeWindowIndex > 0) {
+                goToWindow(activeWindowIndex - 1);
+            }
+        });
+    }
+
+    if (deckNextBtn) {
+        deckNextBtn.addEventListener('click', () => {
+            if (activeWindowIndex < savedWindows.length - 1) {
+                goToWindow(activeWindowIndex + 1);
+            }
+        });
+    }
+
     addWindowBtn.addEventListener('click', () => {
         const newIndex = savedWindows.length + 1;
         savedWindows.push({
@@ -100,6 +122,7 @@ async function init() {
                 { url: "", pinned: false, muted: false, focus: true }
             ]
         });
+        activeWindowIndex = savedWindows.length - 1;
         save(true, `Added Window ${newIndex}`);
         render();
     });
@@ -133,46 +156,193 @@ function save(notify = true, message = "Saved!") {
 }
 
 let notificationTimeout;
+
 function showNotification(msg = "Saved!") {
     clearTimeout(notificationTimeout);
     notification.className = 'notification simple show';
-    notification.textContent = msg;
+    const msgEl = document.getElementById('snack-message');
+    if (msgEl) msgEl.textContent = msg;
     notificationTimeout = setTimeout(() => {
         notification.classList.remove('show');
     }, 2000);
 }
 
-function showUndoSnackbar(message, onUndo) {
+function showUndoSnackbar(message, headline = "Item Deleted", onUndo) {
     clearTimeout(notificationTimeout);
     notification.className = 'notification show';
-    notification.innerHTML = '';
 
-    const msgSpan = document.createElement('span');
-    msgSpan.className = 'snack-msg';
-    msgSpan.textContent = message;
+    const headlineEl = document.getElementById('snack-headline');
+    if (headlineEl) headlineEl.textContent = headline;
 
-    const undoBtn = document.createElement('button');
-    undoBtn.className = 'snack-undo-btn';
-    undoBtn.textContent = 'Undo';
-    undoBtn.onclick = () => {
-        notification.classList.remove('show');
-        onUndo();
-    };
+    const messageEl = document.getElementById('snack-message');
+    if (messageEl) messageEl.textContent = message;
 
-    notification.append(msgSpan, undoBtn);
+    const fuseProgress = document.getElementById('fuse-progress');
+    if (fuseProgress) {
+        fuseProgress.style.animation = 'none';
+        void fuseProgress.offsetHeight; // force reflow to restart animation
+        fuseProgress.style.animation = 'fuseBurn 4s linear forwards';
+    }
+
+    const undoBtn = document.getElementById('snack-undo-btn');
+    if (undoBtn) {
+        undoBtn.onclick = () => {
+            notification.classList.remove('show');
+            clearTimeout(notificationTimeout);
+            if (onUndo) onUndo();
+        };
+    }
 
     notificationTimeout = setTimeout(() => {
         notification.classList.remove('show');
-    }, 3500);
+    }, 4000);
+}
+
+function updateDeckControls() {
+    const prevBtn = document.getElementById('deck-prev-btn');
+    const nextBtn = document.getElementById('deck-next-btn');
+    const counterEl = document.getElementById('deck-counter');
+    const pillsContainer = document.getElementById('deck-pills');
+
+    const total = savedWindows.length;
+    if (total === 0) {
+        activeWindowIndex = 0;
+        if (prevBtn) prevBtn.disabled = true;
+        if (nextBtn) nextBtn.disabled = true;
+        if (counterEl) counterEl.textContent = 'No Windows';
+        if (pillsContainer) pillsContainer.innerHTML = '';
+        return;
+    }
+
+    if (activeWindowIndex >= total) activeWindowIndex = total - 1;
+    if (activeWindowIndex < 0) activeWindowIndex = 0;
+
+    // Non-circular navigation boundaries
+    if (prevBtn) {
+        prevBtn.disabled = (activeWindowIndex <= 0);
+    }
+    if (nextBtn) {
+        nextBtn.disabled = (activeWindowIndex >= total - 1);
+    }
+
+    if (counterEl) {
+        const currentWin = savedWindows[activeWindowIndex];
+        const winTitle = currentWin && currentWin.name ? currentWin.name : `Window ${activeWindowIndex + 1}`;
+        counterEl.textContent = `${winTitle} (${activeWindowIndex + 1} of ${total})`;
+    }
+
+    if (pillsContainer) {
+        pillsContainer.innerHTML = '';
+        for (let i = 0; i < total; i++) {
+            const pill = document.createElement('div');
+            pill.className = `deck-pill ${i === activeWindowIndex ? 'active' : ''}`;
+            pill.title = savedWindows[i]?.name || `Window ${i + 1}`;
+            pill.onclick = () => {
+                if (i !== activeWindowIndex && !isDeckTransitioning) {
+                    goToWindow(i);
+                }
+            };
+            pillsContainer.appendChild(pill);
+        }
+    }
+}
+
+function applyDeckClasses() {
+    const cards = windowsContainer.querySelectorAll('.window-card');
+    cards.forEach((card, idx) => {
+        card.classList.remove(
+            'deck-card-active',
+            'deck-card-under-1',
+            'deck-card-under-2',
+            'deck-card-hidden',
+            'deck-card-discarded-left',
+            'anim-slide-out-left',
+            'anim-surface-from-under',
+            'anim-slide-in-left',
+            'anim-sink-to-under'
+        );
+
+        if (idx === activeWindowIndex) {
+            card.classList.add('deck-card-active');
+        } else if (idx === activeWindowIndex + 1) {
+            card.classList.add('deck-card-under-1');
+        } else if (idx === activeWindowIndex + 2) {
+            card.classList.add('deck-card-under-2');
+        } else if (idx > activeWindowIndex + 2) {
+            card.classList.add('deck-card-hidden');
+        } else if (idx < activeWindowIndex) {
+            card.classList.add('deck-card-discarded-left');
+        }
+    });
+}
+
+function goToWindow(targetIndex) {
+    if (isDeckTransitioning) return;
+    if (targetIndex < 0 || targetIndex >= savedWindows.length) return;
+    if (targetIndex === activeWindowIndex) return;
+
+    const direction = targetIndex > activeWindowIndex ? 'next' : 'prev';
+    isDeckTransitioning = true;
+
+    const cards = windowsContainer.querySelectorAll('.window-card');
+    const currentCard = cards[activeWindowIndex];
+    const targetCard = cards[targetIndex];
+
+    if (direction === 'next' && currentCard && targetCard) {
+        currentCard.classList.remove('deck-card-active');
+        currentCard.classList.add('anim-slide-out-left');
+
+        targetCard.classList.remove('deck-card-under-1', 'deck-card-under-2', 'deck-card-hidden');
+        targetCard.classList.add('anim-surface-from-under', 'deck-card-active');
+
+        setTimeout(() => {
+            currentCard.classList.remove('anim-slide-out-left');
+            targetCard.classList.remove('anim-surface-from-under');
+            activeWindowIndex = targetIndex;
+            isDeckTransitioning = false;
+            applyDeckClasses();
+            updateDeckControls();
+        }, 380);
+    } else if (direction === 'prev' && currentCard && targetCard) {
+        targetCard.classList.remove('deck-card-discarded-left', 'deck-card-hidden');
+        targetCard.classList.add('anim-slide-in-left', 'deck-card-active');
+
+        currentCard.classList.remove('deck-card-active');
+        currentCard.classList.add('anim-sink-to-under');
+
+        setTimeout(() => {
+            targetCard.classList.remove('anim-slide-in-left');
+            currentCard.classList.remove('anim-sink-to-under');
+            activeWindowIndex = targetIndex;
+            isDeckTransitioning = false;
+            applyDeckClasses();
+            updateDeckControls();
+        }, 380);
+    } else {
+        activeWindowIndex = targetIndex;
+        isDeckTransitioning = false;
+        applyDeckClasses();
+        updateDeckControls();
+    }
 }
 
 function render() {
     windowsContainer.innerHTML = '';
 
+    if (activeWindowIndex >= savedWindows.length) {
+        activeWindowIndex = Math.max(0, savedWindows.length - 1);
+    }
+    if (activeWindowIndex < 0) {
+        activeWindowIndex = 0;
+    }
+
     savedWindows.forEach((win, winIndex) => {
         const winCard = renderWindowCard(win, winIndex);
         windowsContainer.appendChild(winCard);
     });
+
+    applyDeckClasses();
+    updateDeckControls();
 }
 
 function renderWindowCard(win, winIndex) {
@@ -205,6 +375,7 @@ function renderWindowCard(win, winIndex) {
     nameInput.onchange = (e) => {
         win.name = e.target.value.trim() || `Window ${winIndex + 1}`;
         save(false);
+        updateDeckControls();
     };
 
     titleArea.append(winIcon, nameInput);
@@ -240,13 +411,29 @@ function renderWindowCard(win, winIndex) {
         deleteWinBtn.className = 'window-btn delete-win';
         deleteWinBtn.appendChild(getIcon('trash'));
         const deleteText = document.createElement('span');
-        deleteText.textContent = 'Delete';
+        deleteText.textContent = 'Delete window';
         deleteWinBtn.appendChild(deleteText);
         deleteWinBtn.title = "Delete this window configuration";
         deleteWinBtn.onclick = () => {
+            const removedWindow = JSON.parse(JSON.stringify(savedWindows[winIndex]));
+            const removedIndex = winIndex;
             savedWindows.splice(winIndex, 1);
-            save(true, "Window removed");
+            if (activeWindowIndex >= savedWindows.length) {
+                activeWindowIndex = Math.max(0, savedWindows.length - 1);
+            }
+            save(false);
             render();
+            showUndoSnackbar(
+                `Removed "${removedWindow.name}" (${removedWindow.tabs.length} tabs)`,
+                "Window Deleted",
+                () => {
+                    savedWindows.splice(removedIndex, 0, removedWindow);
+                    activeWindowIndex = removedIndex;
+                    save(false);
+                    render();
+                    showNotification("Window Restored!");
+                }
+            );
         };
         actionsArea.appendChild(deleteWinBtn);
     }
@@ -423,11 +610,29 @@ function renderTabCard(tab, globalIndex, winIndex, groupIndex, groupArray, isPin
     input.value = tab.url;
     input.placeholder = "https://example.com";
     input.title = "Tab URL";
+
+    const updateWarning = (val) => {
+        const existingWarning = inputContainer.querySelector('.url-file-warning');
+        if (val.trim().toLowerCase().startsWith('file://')) {
+            if (!existingWarning) {
+                const warn = document.createElement('div');
+                warn.className = 'url-file-warning';
+                warn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg><span>Firefox policy forbids extensions from opening local file:// URLs.</span>`;
+                inputContainer.appendChild(warn);
+            }
+        } else if (existingWarning) {
+            existingWarning.remove();
+        }
+    };
+
+    input.oninput = (e) => updateWarning(e.target.value);
     input.onchange = (e) => {
         tab.url = e.target.value.trim();
+        updateWarning(tab.url);
         save(false);
     };
 
+    updateWarning(tab.url);
     inputContainer.appendChild(input);
     card.appendChild(inputContainer);
 
@@ -489,18 +694,22 @@ function renderTabCard(tab, globalIndex, winIndex, groupIndex, groupArray, isPin
 
             const displayName = deletedTab.url
                 ? deletedTab.url.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '')
-                : 'Tab';
+                : 'Empty tab';
 
-            showUndoSnackbar(`Removed "${displayName}"`, () => {
-                win.tabs.splice(tabIndexInWin, 0, deletedTab);
-                if (wasFocused) {
-                    win.tabs.forEach(t => t.focus = (t === deletedTab));
+            showUndoSnackbar(
+                `Removed tab "${displayName}" from ${win.name || `Window ${winIndex + 1}`}`,
+                "Tab Deleted",
+                () => {
+                    win.tabs.splice(tabIndexInWin, 0, deletedTab);
+                    if (wasFocused) {
+                        win.tabs.forEach(t => t.focus = (t === deletedTab));
+                    }
+                    sortWindowTabs(win);
+                    save(false);
+                    render();
+                    showNotification("Tab Restored!");
                 }
-                sortWindowTabs(win);
-                save(false);
-                render();
-                showNotification("Restored!");
-            });
+            );
         }
     };
 
