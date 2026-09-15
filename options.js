@@ -106,6 +106,18 @@ async function init() {
 
     importAllBtn.addEventListener('click', importAllWindows);
 
+    try {
+        const manifest = (typeof browser !== 'undefined' && browser.runtime && browser.runtime.getManifest)
+            ? browser.runtime.getManifest()
+            : null;
+        if (manifest && manifest.version) {
+            const versionEl = document.querySelector('.footer-version');
+            if (versionEl) {
+                versionEl.textContent = `v${manifest.version}`;
+            }
+        }
+    } catch (e) {}
+
     render();
 }
 

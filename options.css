@@ -641,45 +641,96 @@ p.subtitle {
     gap: 12px;
 }
 
-.footer-avatar {
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    border: 1px solid var(--card-border);
-    background: var(--card-bg);
-}
-
-.footer-info {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-}
-
-.footer-title-row {
+.footer-addon-link {
     display: flex;
     align-items: center;
-    gap: 8px;
+    text-decoration: none;
+    transition: transform 0.15s ease;
+}
+
+.footer-addon-link:hover {
+    transform: scale(1.08);
+}
+
+.footer-addon-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    display: block;
+}
+
+.footer-line {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.85rem;
+    flex-wrap: wrap;
 }
 
 .footer-version {
-    font-size: 0.95rem;
+    font-size: 0.9rem;
     font-weight: 600;
     color: var(--text-primary);
     letter-spacing: 0.3px;
+    text-decoration: none;
+    transition: color 0.15s ease;
+}
+
+.footer-version:hover {
+    color: var(--accent);
 }
 
 .footer-badge {
     font-size: 0.72rem;
     color: var(--text-secondary);
     background: rgba(255, 255, 255, 0.06);
-    padding: 1px 6px;
+    padding: 2px 7px;
     border-radius: 4px;
     font-weight: 500;
+    text-decoration: none;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    transition: all 0.15s ease;
 }
 
-.footer-author {
-    font-size: 0.78rem;
+.footer-badge:hover {
+    color: var(--accent);
+    border-color: rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.footer-separator {
     color: var(--text-muted);
+    opacity: 0.6;
+    font-size: 0.75rem;
+}
+
+.footer-author-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    color: var(--text-secondary);
+    font-size: 0.82rem;
+    transition: color 0.15s ease;
+}
+
+.footer-author-link:hover {
+    color: var(--text-primary);
+}
+
+.footer-propic {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    object-fit: cover;
+    display: block;
+    transition: transform 0.15s ease, border-color 0.15s ease;
+}
+
+.footer-author-link:hover .footer-propic {
+    transform: scale(1.1);
+    border-color: var(--accent);
 }
 
 .footer-right {
