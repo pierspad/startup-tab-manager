@@ -122,12 +122,36 @@ function save(notify = true, message = "Saved!") {
 
 let notificationTimeout;
 function showNotification(msg = "Saved!") {
-    notification.textContent = msg;
-    notification.classList.add('show');
     clearTimeout(notificationTimeout);
+    notification.className = 'notification simple show';
+    notification.textContent = msg;
     notificationTimeout = setTimeout(() => {
         notification.classList.remove('show');
     }, 2000);
+}
+
+function showUndoSnackbar(message, onUndo) {
+    clearTimeout(notificationTimeout);
+    notification.className = 'notification show';
+    notification.innerHTML = '';
+
+    const msgSpan = document.createElement('span');
+    msgSpan.className = 'snack-msg';
+    msgSpan.textContent = message;
+
+    const undoBtn = document.createElement('button');
+    undoBtn.className = 'snack-undo-btn';
+    undoBtn.textContent = 'Undo';
+    undoBtn.onclick = () => {
+        notification.classList.remove('show');
+        onUndo();
+    };
+
+    notification.append(msgSpan, undoBtn);
+
+    notificationTimeout = setTimeout(() => {
+        notification.classList.remove('show');
+    }, 3500);
 }
 
 function render() {
@@ -443,12 +467,28 @@ function renderTabCard(tab, globalIndex, winIndex, groupIndex, groupArray, isPin
         const win = savedWindows[winIndex];
         const tabIndexInWin = win.tabs.indexOf(tab);
         if (tabIndexInWin !== -1) {
-            win.tabs.splice(tabIndexInWin, 1);
-            if (tab.focus && win.tabs.length > 0) {
+            const [deletedTab] = win.tabs.splice(tabIndexInWin, 1);
+            const wasFocused = deletedTab.focus;
+            if (wasFocused && win.tabs.length > 0) {
                 win.tabs[0].focus = true;
             }
             save(false);
             render();
+
+            const displayName = deletedTab.url
+                ? deletedTab.url.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '')
+                : 'Tab';
+
+            showUndoSnackbar(`Removed "${displayName}"`, () => {
+                win.tabs.splice(tabIndexInWin, 0, deletedTab);
+                if (wasFocused) {
+                    win.tabs.forEach(t => t.focus = (t === deletedTab));
+                }
+                sortWindowTabs(win);
+                save(false);
+                render();
+                showNotification("Restored!");
+            });
         }
     };
 

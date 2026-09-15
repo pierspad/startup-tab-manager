@@ -1,10 +1,10 @@
 name: CI (Test & Lint)
 
 on:
-  push:
-    branches-ignore: [ main ]
   pull_request:
-    branches: [ main ]
+    branches:
+      - main
+      - dev
 
 jobs:
   validate:
@@ -29,10 +29,3 @@ jobs:
 
       - name: Verify Build
         run: npm run build
-
-      - name: Upload Extension Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: startup-tab-manager-build
-          path: web-ext-artifacts/*.zip
-          retention-days: 7

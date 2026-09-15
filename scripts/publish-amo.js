@@ -1,6 +1,16 @@
 #!/usr/bin/env node
 const { execSync } = require('child_process');
 
+const channel = process.argv[2];
+const isPrerelease = channel === 'dev' || (channel && channel !== 'undefined' && channel !== 'false');
+
+if (isPrerelease) {
+    console.log(`ℹ️ Prerelease channel "${channel}" detected.`);
+    console.log('ℹ️ Skipping Mozilla Add-ons (AMO) store submission for prerelease/dev.');
+    console.log('ℹ️ Prerelease package (.zip) is attached to the GitHub Pre-release.');
+    process.exit(0);
+}
+
 const issuer = process.env.AMO_JWT_ISSUER;
 const secret = process.env.AMO_JWT_SECRET;
 
