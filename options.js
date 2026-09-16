@@ -185,13 +185,7 @@ async function init() {
     if (openAddonsBtn) openAddonsBtn.addEventListener('click', handleCopyAddons);
     if (copyAddonsCode) copyAddonsCode.addEventListener('click', handleCopyAddons);
 
-    const dismissBannerBtn = document.getElementById('dismiss-incognito-banner');
-    if (dismissBannerBtn) {
-        dismissBannerBtn.addEventListener('click', () => {
-            const banner = document.getElementById('incognito-permission-banner');
-            if (banner) banner.classList.add('hidden');
-        });
-    }
+
 
     try {
         const manifest = (typeof browser !== 'undefined' && browser.runtime && browser.runtime.getManifest)
@@ -242,11 +236,11 @@ function showUndoSnackbar(message, headline = "Item Deleted", onUndo) {
     const messageEl = document.getElementById('snack-message');
     if (messageEl) messageEl.textContent = message;
 
-    const fuseFill = document.getElementById('fuse-fill');
-    if (fuseFill) {
-        fuseFill.style.animation = 'none';
-        void fuseFill.offsetHeight; // force reflow to restart animation
-        fuseFill.style.animation = 'fuseDrain 4s linear forwards';
+    const ring = document.getElementById('countdown-ring');
+    if (ring) {
+        ring.style.animation = 'none';
+        void ring.offsetHeight; // force reflow to restart animation
+        ring.style.animation = 'countdownDrain 4s linear forwards';
     }
 
     const undoBtn = document.getElementById('snack-undo-btn');
@@ -405,19 +399,8 @@ function renderWindowCard(win, winIndex) {
         titleArea.appendChild(mainBadge);
     }
 
-    if (win.incognito) {
-        const incogBadge = document.createElement('span');
-        incogBadge.className = 'window-badge incognito-badge';
-        incogBadge.appendChild(getIcon('incognito'));
-        const incogBadgeText = document.createElement('span');
-        incogBadgeText.textContent = 'Private';
-        incogBadge.appendChild(incogBadgeText);
-        incogBadge.title = 'Configured to open in Private Browsing mode';
-        titleArea.appendChild(incogBadge);
-    }
-
     const countBadge = document.createElement('span');
-    countBadge.className = 'window-badge';
+    countBadge.className = 'window-badge tabs-count-badge';
     countBadge.textContent = `${totalTabs} tab${totalTabs === 1 ? '' : 's'}`;
     titleArea.appendChild(countBadge);
 
@@ -447,20 +430,25 @@ function renderWindowCard(win, winIndex) {
     importWinBtn.className = 'window-btn';
     importWinBtn.appendChild(getIcon('import'));
     const importText = document.createElement('span');
-    importText.textContent = 'Import Tabs';
+    importText.textContent = 'Import Open Tabs';
     importWinBtn.appendChild(importText);
     importWinBtn.title = "Import all open tabs from your active window into this list";
     importWinBtn.onclick = () => importTabsToWindow(winIndex);
 
     actionsArea.append(incognitoBtn, importWinBtn);
 
-    if (savedWindows.length > 1) {
-        const deleteWinBtn = document.createElement('button');
-        deleteWinBtn.className = 'window-btn delete-win';
-        deleteWinBtn.appendChild(getIcon('trash'));
-        const deleteText = document.createElement('span');
-        deleteText.textContent = 'Delete window';
-        deleteWinBtn.appendChild(deleteText);
+    const deleteWinBtn = document.createElement('button');
+    deleteWinBtn.className = 'window-btn delete-win';
+    deleteWinBtn.appendChild(getIcon('trash'));
+    const deleteText = document.createElement('span');
+    deleteText.textContent = 'Delete window';
+    deleteWinBtn.appendChild(deleteText);
+
+    if (savedWindows.length <= 1) {
+        deleteWinBtn.disabled = true;
+        deleteWinBtn.title = "At least one window is required";
+    } else {
+        deleteWinBtn.disabled = false;
         deleteWinBtn.title = "Delete this window configuration";
         deleteWinBtn.onclick = () => {
             const removedWindow = JSON.parse(JSON.stringify(savedWindows[winIndex]));
@@ -485,8 +473,8 @@ function renderWindowCard(win, winIndex) {
                 }
             );
         };
-        actionsArea.appendChild(deleteWinBtn);
     }
+    actionsArea.appendChild(deleteWinBtn);
 
     header.append(titleArea, actionsArea);
     card.appendChild(header);
@@ -706,7 +694,7 @@ function renderTabCard(tab, globalIndex, winIndex, groupIndex, groupArray, isPin
     const muteBtn = document.createElement('button');
     muteBtn.className = `icon-btn ${tab.muted ? 'active' : ''}`;
     muteBtn.appendChild(getIcon('muted'));
-    muteBtn.title = tab.muted ? "Unmute on startup" : "Mute on startup";
+    muteBtn.title = tab.muted ? "Sound on at startup" : "Mute on startup";
     muteBtn.onclick = () => {
         tab.muted = !tab.muted;
         save(false);

@@ -28,11 +28,10 @@
                 </div>
                 <div class="incognito-banner-text">
                     <strong>Private Windows Permission Required:</strong>
-                    <span>You have configured a window to open in Private Browsing mode. In Firefox, open <code id="copy-addons-code" class="code-copyable" title="Click to copy about:addons">about:addons</code> &rarr; click <strong>Startup Tab Manager</strong> &rarr; and toggle <strong>"Run in Private Windows"</strong> to <strong>Allow</strong>.</span>
+                    <span>Private windows will NOT be restored unless allowed in Firefox settings. Open <code id="copy-addons-code" class="code-copyable" title="Click to copy about:addons">about:addons</code> &rarr; click <strong>Extensions</strong> in the left menu &rarr; select <strong>Startup Tab Manager</strong> &rarr; and toggle <strong>"Run in Private Windows"</strong> to <strong>Allow</strong>.</span>
                 </div>
                 <button type="button" id="open-addons-btn" class="banner-action-btn" title="Copy 'about:addons' to clipboard">Copy "about:addons"</button>
             </div>
-            <button id="dismiss-incognito-banner" class="incognito-banner-close" title="Dismiss notice" aria-label="Dismiss">&times;</button>
         </div>
 
         <!-- Unified Window Manager Frame -->
@@ -60,6 +59,14 @@
                             <polyline points="9 18 15 12 9 6"></polyline>
                         </svg>
                     </button>
+
+                    <button id="add-window-btn" class="deck-nav-btn deck-add-btn" title="Add another window to restore on startup" aria-label="Add window">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                        <span>Add Window</span>
+                    </button>
                 </div>
             </div>
 
@@ -72,16 +79,6 @@
         </div>
 
         <section class="global-actions-container">
-            <button id="add-window-btn" class="action-btn primary" title="Add another window to restore on startup">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
-                    <line x1="8" y1="21" x2="16" y2="21"></line>
-                    <line x1="12" y1="17" x2="12" y2="21"></line>
-                    <line x1="9" y1="10" x2="15" y2="10"></line>
-                    <line x1="12" y1="7" x2="12" y2="13"></line>
-                </svg>
-                Add New Window
-            </button>
             <button id="import-all-btn" class="action-btn secondary" title="Capture all currently open Firefox windows and their tabs">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
@@ -138,9 +135,12 @@
 
     <div id="notification" class="notification" role="status" aria-live="polite">
         <div class="notification-fuse-container" id="notification-fuse" title="Expiring undo timer">
-            <svg class="fuse-svg" viewBox="0 0 32 32">
-                <circle class="fuse-bg" cx="16" cy="16" r="14" />
-                <circle id="fuse-fill" class="fuse-fill" cx="16" cy="16" r="7" transform="rotate(-90 16 16)" />
+            <svg class="countdown-svg" viewBox="0 0 36 36">
+                <circle class="countdown-track" cx="18" cy="18" r="14" fill="none" stroke="rgba(255, 255, 255, 0.12)" stroke-width="3" />
+                <circle id="countdown-ring" class="countdown-ring" cx="18" cy="18" r="14" fill="none" stroke="#ff4757" stroke-width="3" stroke-linecap="round" stroke-dasharray="88" stroke-dashoffset="0" transform="rotate(-90 18 18)" />
+                <g class="countdown-center-icon" transform="translate(10, 10)">
+                    <path d="M2 4h12M13 4v10a1.5 1.5 0 0 1-1.5 1.5h-7A1.5 1.5 0 0 1 3 14V4m2 0V2.5A1.5 1.5 0 0 1 6.5 1h3A1.5 1.5 0 0 1 11 2.5V4" fill="none" stroke="#ff6b81" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                </g>
             </svg>
         </div>
         <div class="snack-body">
