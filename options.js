@@ -297,6 +297,15 @@ function updateCarousel(animate = true) {
             windowsContainer.style.transition = '';
         }
     }
+    const frame = document.getElementById('window-manager-frame');
+    if (frame) {
+        const currentWin = savedWindows[activeWindowIndex];
+        if (currentWin && currentWin.incognito) {
+            frame.classList.add('is-incognito');
+        } else {
+            frame.classList.remove('is-incognito');
+        }
+    }
     updateDeckControls();
 }
 

@@ -127,62 +127,47 @@ p.subtitle {
     color: var(--text-primary);
 }
 
-/* Deck Navigation Controls */
+/* Unified Window Manager Frame */
+.window-manager-frame {
+    width: 100%;
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: var(--border-radius);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    margin-bottom: 24px;
+    overflow: hidden;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.window-manager-frame.is-incognito {
+    border-color: rgba(162, 155, 254, 0.45);
+    box-shadow: 0 8px 28px rgba(108, 92, 231, 0.16);
+}
+
+/* Unified Card Header: Window Deck Navigation Controls */
 .deck-controls {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 18px;
-    padding: 10px 16px;
-    background: var(--card-bg);
-    border: 1px solid var(--card-border);
-    border-radius: var(--border-radius-sm);
-    gap: 12px;
-}
-
-.deck-nav-btn {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid var(--card-border);
-    color: var(--text-primary);
-    padding: 8px 16px;
-    border-radius: 6px;
-    font-size: 0.88rem;
-    font-weight: 600;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    transition: all 0.2s ease;
-    user-select: none;
-    font-family: inherit;
-}
-
-.deck-nav-btn:hover:not(:disabled) {
-    background: var(--accent);
-    color: #121215;
-    border-color: var(--accent);
-    transform: translateY(-1px);
-}
-
-.deck-nav-btn:disabled {
-    opacity: 0.3;
-    cursor: not-allowed;
-    border-color: rgba(255, 255, 255, 0.06);
-    background: transparent;
+    padding: 12px 20px;
+    background: rgba(255, 255, 255, 0.025);
+    border-bottom: 1px solid var(--card-border);
+    gap: 16px;
+    flex-wrap: wrap;
 }
 
 .deck-status {
     display: flex;
-    flex-direction: column;
     align-items: center;
-    gap: 6px;
+    gap: 12px;
+    flex-wrap: wrap;
 }
 
 .deck-counter {
-    font-size: 0.95rem;
+    font-size: 0.96rem;
     font-weight: 700;
     color: var(--text-primary);
-    letter-spacing: 0.4px;
+    letter-spacing: 0.3px;
 }
 
 .deck-pills {
@@ -211,13 +196,50 @@ p.subtitle {
     background: var(--accent);
 }
 
-/* Carousel Viewport and Track */
+.deck-nav-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: auto;
+}
+
+.deck-nav-btn {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--card-border);
+    color: var(--text-primary);
+    padding: 7px 14px;
+    border-radius: 6px;
+    font-size: 0.84rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+    user-select: none;
+    font-family: inherit;
+}
+
+.deck-nav-btn:hover:not(:disabled) {
+    background: var(--accent);
+    color: #121215;
+    border-color: var(--accent);
+    transform: translateY(-1px);
+}
+
+.deck-nav-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+    border-color: rgba(255, 255, 255, 0.06);
+    background: transparent;
+}
+
+/* Carousel Viewport and Track (Unified Inside Frame) */
 .carousel-viewport {
     width: 100%;
     overflow: hidden;
     position: relative;
-    border-radius: var(--border-radius);
-    margin-bottom: 24px;
+    margin-bottom: 0;
 }
 
 .carousel-track {
@@ -228,27 +250,17 @@ p.subtitle {
     align-items: flex-start;
 }
 
-/* Window Card in Carousel */
+/* Window Card in Carousel (Seamless Inside Unified Frame) */
 .window-card {
     flex: 0 0 100%;
     width: 100%;
     max-width: 100%;
     box-sizing: border-box;
-    background: var(--card-bg);
-    border: 1px solid var(--card-border);
-    border-radius: var(--border-radius);
-    padding: 22px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
-    transition: border-color 0.2s, box-shadow 0.2s;
-}
-
-.window-card:hover {
-    border-color: var(--card-border-hover);
-}
-
-.window-card.is-incognito {
-    border-color: rgba(162, 155, 254, 0.45);
-    box-shadow: 0 8px 28px rgba(108, 92, 231, 0.16);
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    padding: 22px 24px;
+    box-shadow: none;
 }
 
 .window-header {

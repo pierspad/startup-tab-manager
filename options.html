@@ -34,32 +34,38 @@
             <button id="dismiss-incognito-banner" class="incognito-banner-close" title="Dismiss notice" aria-label="Dismiss">&times;</button>
         </div>
 
-        <!-- Window Deck Navigation Controls -->
-        <div class="deck-controls" id="deck-controls">
-            <button id="deck-prev-btn" class="deck-nav-btn" title="Previous window" aria-label="Previous window">
-                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                    <polyline points="15 18 9 12 15 6"></polyline>
-                </svg>
-                <span>Prev Window</span>
-            </button>
+        <!-- Unified Window Manager Frame -->
+        <div class="window-manager-frame" id="window-manager-frame">
+            <!-- Window Deck Navigation Controls (Card Header) -->
+            <div class="deck-controls" id="deck-controls">
+                <div class="deck-status">
+                    <span id="deck-counter" class="deck-counter">Window 1 of 1</span>
+                    <div id="deck-pills" class="deck-pills"></div>
+                </div>
 
-            <div class="deck-status">
-                <span id="deck-counter" class="deck-counter">Window 1 of 1</span>
-                <div id="deck-pills" class="deck-pills"></div>
+                <div class="deck-nav-group">
+                    <button id="deck-prev-btn" class="deck-nav-btn" title="Previous window" aria-label="Previous window">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="15 18 9 12 15 6"></polyline>
+                        </svg>
+                        <span>Prev Window</span>
+                    </button>
+
+                    <button id="deck-next-btn" class="deck-nav-btn" title="Next window" aria-label="Next window">
+                        <span>Next Window</span>
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="9 18 15 12 9 6"></polyline>
+                        </svg>
+                    </button>
+                </div>
             </div>
 
-            <button id="deck-next-btn" class="deck-nav-btn" title="Next window" aria-label="Next window">
-                <span>Next Window</span>
-                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                    <polyline points="9 18 15 12 9 6"></polyline>
-                </svg>
-            </button>
-        </div>
-
-        <div class="carousel-viewport" id="carousel-viewport">
-            <main id="windows-container" class="carousel-track">
-                <!-- Windows dynamically rendered as carousel slides -->
-            </main>
+            <!-- Carousel Viewport (Sliding Window Content) -->
+            <div class="carousel-viewport" id="carousel-viewport">
+                <main id="windows-container" class="carousel-track">
+                    <!-- Windows dynamically rendered as carousel slides -->
+                </main>
+            </div>
         </div>
 
         <section class="global-actions-container">
