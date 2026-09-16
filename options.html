@@ -28,8 +28,9 @@
                 </div>
                 <div class="incognito-banner-text">
                     <strong>Private Windows Permission Required:</strong>
-                    <span>You have configured a window to open in Private Browsing mode. In Firefox, open <code>about:addons</code> &rarr; click <strong>Startup Tab Manager</strong> &rarr; and toggle <strong>"Run in Private Windows"</strong> to <strong>Allow</strong>.</span>
+                    <span>You have configured a window to open in Private Browsing mode. In Firefox, open <code id="copy-addons-code" class="code-copyable" title="Click to copy about:addons">about:addons</code> &rarr; click <strong>Startup Tab Manager</strong> &rarr; and toggle <strong>"Run in Private Windows"</strong> to <strong>Allow</strong>.</span>
                 </div>
+                <button type="button" id="open-addons-btn" class="banner-action-btn" title="Copy 'about:addons' to clipboard">Copy "about:addons"</button>
             </div>
             <button id="dismiss-incognito-banner" class="incognito-banner-close" title="Dismiss notice" aria-label="Dismiss">&times;</button>
         </div>
@@ -39,7 +40,9 @@
             <!-- Window Deck Navigation Controls (Card Header) -->
             <div class="deck-controls" id="deck-controls">
                 <div class="deck-status">
-                    <span id="deck-counter" class="deck-counter">Window 1 of 1</span>
+                    <span id="deck-order-badge" class="deck-order-badge">#1</span>
+                    <input type="text" id="deck-title-input" class="deck-title-input" title="Click to rename window" placeholder="Window 1" />
+                    <span id="deck-counter" class="deck-counter">(1 of 1)</span>
                     <div id="deck-pills" class="deck-pills"></div>
                 </div>
 
@@ -48,11 +51,11 @@
                         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                             <polyline points="15 18 9 12 15 6"></polyline>
                         </svg>
-                        <span>Prev Window</span>
+                        <span>Prev</span>
                     </button>
 
                     <button id="deck-next-btn" class="deck-nav-btn" title="Next window" aria-label="Next window">
-                        <span>Next Window</span>
+                        <span>Next</span>
                         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                             <polyline points="9 18 15 12 9 6"></polyline>
                         </svg>

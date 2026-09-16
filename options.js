@@ -94,9 +94,6 @@ async function checkIncognitoPermission(showNotificationIfMissing = false) {
 
     if (hasIncognitoWindow && !isAllowed) {
         banner.classList.remove('hidden');
-        if (showNotificationIfMissing) {
-            showNotification("Enable 'Run in Private Windows' in about:addons");
-        }
     } else {
         banner.classList.add('hidden');
     }
@@ -139,6 +136,25 @@ async function init() {
         });
     }
 
+    const deckTitleInput = document.getElementById('deck-title-input');
+    if (deckTitleInput) {
+        const commitTitleRename = () => {
+            if (savedWindows[activeWindowIndex]) {
+                const newTitle = deckTitleInput.value.trim() || `Window ${activeWindowIndex + 1}`;
+                savedWindows[activeWindowIndex].name = newTitle;
+                save(false);
+                updateDeckControls();
+            }
+        };
+        deckTitleInput.addEventListener('change', commitTitleRename);
+        deckTitleInput.addEventListener('blur', commitTitleRename);
+        deckTitleInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                deckTitleInput.blur();
+            }
+        });
+    }
+
     addWindowBtn.addEventListener('click', () => {
         const newIndex = savedWindows.length + 1;
         savedWindows.push({
@@ -155,6 +171,19 @@ async function init() {
     });
 
     importAllBtn.addEventListener('click', importAllWindows);
+
+    const openAddonsBtn = document.getElementById('open-addons-btn');
+    const copyAddonsCode = document.getElementById('copy-addons-code');
+    const handleCopyAddons = async () => {
+        try {
+            await navigator.clipboard.writeText("about:addons");
+            showNotification("Copied 'about:addons' to clipboard!");
+        } catch (err) {
+            showNotification("Type 'about:addons' in address bar");
+        }
+    };
+    if (openAddonsBtn) openAddonsBtn.addEventListener('click', handleCopyAddons);
+    if (copyAddonsCode) copyAddonsCode.addEventListener('click', handleCopyAddons);
 
     const dismissBannerBtn = document.getElementById('dismiss-incognito-banner');
     if (dismissBannerBtn) {
@@ -237,6 +266,8 @@ function showUndoSnackbar(message, headline = "Item Deleted", onUndo) {
 function updateDeckControls() {
     const prevBtn = document.getElementById('deck-prev-btn');
     const nextBtn = document.getElementById('deck-next-btn');
+    const orderBadgeEl = document.getElementById('deck-order-badge');
+    const titleInputEl = document.getElementById('deck-title-input');
     const counterEl = document.getElementById('deck-counter');
     const pillsContainer = document.getElementById('deck-pills');
 
@@ -245,7 +276,12 @@ function updateDeckControls() {
         activeWindowIndex = 0;
         if (prevBtn) prevBtn.disabled = true;
         if (nextBtn) nextBtn.disabled = true;
-        if (counterEl) counterEl.textContent = 'No Windows';
+        if (orderBadgeEl) orderBadgeEl.textContent = '#0';
+        if (titleInputEl) {
+            titleInputEl.value = '';
+            titleInputEl.disabled = true;
+        }
+        if (counterEl) counterEl.textContent = '(0 of 0)';
         if (pillsContainer) pillsContainer.innerHTML = '';
         return;
     }
@@ -261,11 +297,17 @@ function updateDeckControls() {
         nextBtn.disabled = (activeWindowIndex >= total - 1);
     }
 
+    const currentWin = savedWindows[activeWindowIndex];
+    if (orderBadgeEl) {
+        orderBadgeEl.textContent = `#${activeWindowIndex + 1}`;
+    }
+    if (titleInputEl) {
+        titleInputEl.disabled = false;
+        titleInputEl.value = currentWin?.name || `Window ${activeWindowIndex + 1}`;
+        titleInputEl.placeholder = `Window ${activeWindowIndex + 1}`;
+    }
     if (counterEl) {
-        const currentWin = savedWindows[activeWindowIndex];
-        const winTitle = currentWin && currentWin.name ? currentWin.name : `Window ${activeWindowIndex + 1}`;
-        const incogTag = currentWin && currentWin.incognito ? ' 🕶️ Private' : '';
-        counterEl.textContent = `#${activeWindowIndex + 1} • ${winTitle}${incogTag} (${activeWindowIndex + 1} of ${total})`;
+        counterEl.textContent = `(${activeWindowIndex + 1} of ${total})`;
     }
 
     if (pillsContainer) {
@@ -351,39 +393,10 @@ function renderWindowCard(win, winIndex) {
     const titleArea = document.createElement('div');
     titleArea.className = 'window-title-area';
 
-    // Sequential ordered number badge (#1, #2, ...)
-    const orderBadge = document.createElement('span');
-    orderBadge.className = 'window-order-badge';
-    orderBadge.textContent = `#${winIndex + 1}`;
-    orderBadge.title = `Window index ${winIndex + 1}`;
-
     const winIcon = document.createElement('span');
     winIcon.className = 'window-icon';
     winIcon.appendChild(getIcon(win.incognito ? 'incognito' : 'window'));
-
-    // Renameable input wrapper with pencil icon
-    const nameWrapper = document.createElement('div');
-    nameWrapper.className = 'window-name-wrapper';
-
-    const nameInput = document.createElement('input');
-    nameInput.type = 'text';
-    nameInput.className = 'window-name-input';
-    nameInput.value = win.name || `Window ${winIndex + 1}`;
-    nameInput.title = "Click to rename window";
-    nameInput.placeholder = `Window ${winIndex + 1}`;
-    nameInput.onchange = (e) => {
-        win.name = e.target.value.trim() || `Window ${winIndex + 1}`;
-        save(false);
-        updateDeckControls();
-    };
-
-    const renameIcon = document.createElement('span');
-    renameIcon.className = 'window-rename-icon';
-    renameIcon.title = "Rename window";
-    renameIcon.appendChild(getIcon('edit'));
-
-    nameWrapper.append(nameInput, renameIcon);
-    titleArea.append(orderBadge, winIcon, nameWrapper);
+    titleArea.appendChild(winIcon);
 
     if (winIndex === 0) {
         const mainBadge = document.createElement('span');
