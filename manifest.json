@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Startup Tab Manager",
-  "version": "1.1.0.6",
+  "version": "1.1.0",
   "description": "Opens, pins, reorders and handles selected tabs on startup",
   "permissions": [
     "tabs",

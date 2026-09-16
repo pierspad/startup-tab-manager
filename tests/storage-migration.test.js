@@ -7,12 +7,12 @@ describe('Storage Migration & Schema Compatibility', () => {
         const result = migrateStorageConfig(null);
         assert.strictEqual(result.wasMigrated, true);
         assert.strictEqual(result.windows.length, 1);
-        assert.strictEqual(result.windows[0].name, 'Window 1');
+        assert.strictEqual(result.windows[0].name, 'Window');
         assert.strictEqual(result.windows[0].tabs.length, defaultConfig.length);
         assert.strictEqual(result.closeOtherTabs, false);
     });
 
-    test('migrates legacy savedTabs into Window 1 without data loss', () => {
+    test('migrates legacy savedTabs into Window without data loss', () => {
         const legacyData = {
             savedTabs: [
                 { url: 'https://custom1.com', pinned: true, muted: false, focus: false },
@@ -24,7 +24,7 @@ describe('Storage Migration & Schema Compatibility', () => {
         const result = migrateStorageConfig(legacyData);
         assert.strictEqual(result.wasMigrated, true);
         assert.strictEqual(result.windows.length, 1);
-        assert.strictEqual(result.windows[0].name, 'Window 1');
+        assert.strictEqual(result.windows[0].name, 'Window');
         assert.strictEqual(result.windows[0].tabs.length, 2);
         assert.strictEqual(result.windows[0].tabs[0].url, 'https://custom1.com');
         assert.strictEqual(result.windows[0].tabs[1].url, 'https://custom2.com');

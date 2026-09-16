@@ -12,10 +12,8 @@ if (!newVersion) {
 // Mozilla WebExtensions require version to be 1 to 4 dot-separated integers (no letters or hyphens)
 let manifestVersion = newVersion;
 if (manifestVersion.includes('-')) {
-    const [base, pre] = manifestVersion.split('-');
-    const preNumMatch = pre.match(/\d+/);
-    const preNum = preNumMatch ? preNumMatch[0] : '1';
-    manifestVersion = `${base}.${preNum}`;
+    const [base] = manifestVersion.split('-');
+    manifestVersion = base;
 }
 
 const manifestPath = path.resolve(__dirname, '..', 'manifest.json');

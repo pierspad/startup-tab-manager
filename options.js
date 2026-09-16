@@ -111,9 +111,7 @@ async function init() {
     if (closeOthersCheckbox) {
         closeOthersCheckbox.checked = !!data.closeOtherTabs;
         closeOthersCheckbox.addEventListener('change', (e) => {
-            browser.storage.local.set({ closeOtherTabs: e.target.checked }).then(() => {
-                showNotification("Settings updated!");
-            });
+            browser.storage.local.set({ closeOtherTabs: e.target.checked });
         });
     }
 
@@ -194,7 +192,8 @@ async function init() {
         if (manifest && manifest.version) {
             const versionEl = document.querySelector('.footer-version');
             if (versionEl) {
-                versionEl.textContent = `v${manifest.version}`;
+                const cleanVersion = manifest.version.split('.').slice(0, 3).join('.');
+                versionEl.textContent = `v${cleanVersion}`;
             }
         }
     } catch (e) {}
@@ -236,11 +235,11 @@ function showUndoSnackbar(message, headline = "Item Deleted", onUndo) {
     const messageEl = document.getElementById('snack-message');
     if (messageEl) messageEl.textContent = message;
 
-    const ring = document.getElementById('countdown-ring');
-    if (ring) {
-        ring.style.animation = 'none';
-        void ring.offsetHeight; // force reflow to restart animation
-        ring.style.animation = 'countdownDrain 4s linear forwards';
+    const fuse = document.getElementById('notification-fuse');
+    if (fuse) {
+        fuse.classList.remove('animating');
+        void notification.offsetHeight; // force reflow on HTMLElement to reset animation reliably
+        fuse.classList.add('animating');
     }
 
     const undoBtn = document.getElementById('snack-undo-btn');
@@ -254,7 +253,7 @@ function showUndoSnackbar(message, headline = "Item Deleted", onUndo) {
 
     notificationTimeout = setTimeout(() => {
         notification.classList.remove('show');
-    }, 4000);
+    }, 2500);
 }
 
 function updateDeckControls() {
@@ -506,7 +505,7 @@ function renderWindowCard(win, winIndex) {
     if (pinnedTabs.length === 0) {
         const emptyPinned = document.createElement('div');
         emptyPinned.className = 'empty-section-placeholder';
-        emptyPinned.textContent = "No pinned tabs. Click the 📌 icon on any tab below to pin it.";
+        emptyPinned.textContent = "No pinned tabs. Click the 🖈 icon on any tab below to pin it.";
         pinnedList.appendChild(emptyPinned);
     } else {
         pinnedTabs.forEach((tab, pIndex) => {
@@ -792,10 +791,31 @@ async function importTabsToWindow(winIndex) {
 
         // If window only has empty placeholder tabs, replace them
         const hasOnlyEmptyTabs = win.tabs.length === 1 && win.tabs[0].url.trim() === "";
+        let addedCount = 0;
+        let skippedCount = 0;
+
         if (hasOnlyEmptyTabs) {
             win.tabs = newTabs;
+            addedCount = newTabs.length;
         } else {
-            win.tabs = [...win.tabs, ...newTabs];
+            const existingUrls = new Set(win.tabs.map(t => normalizeUrl(t.url)));
+            const tabsToAdd = [];
+            for (const tab of newTabs) {
+                const norm = normalizeUrl(tab.url);
+                if (existingUrls.has(norm)) {
+                    skippedCount++;
+                } else {
+                    tabsToAdd.push(tab);
+                }
+            }
+
+            if (tabsToAdd.length === 0) {
+                showNotification("All open tabs already exist in this window!");
+                return;
+            }
+
+            win.tabs = [...win.tabs, ...tabsToAdd];
+            addedCount = tabsToAdd.length;
         }
 
         if (!win.tabs.some(t => t.focus) && win.tabs.length > 0) {
@@ -803,7 +823,8 @@ async function importTabsToWindow(winIndex) {
         }
 
         sortWindowTabs(win);
-        save(true, `Imported ${newTabs.length} tabs into ${win.name}!`);
+        const skippedMsg = skippedCount > 0 ? ` (${skippedCount} duplicates skipped)` : '';
+        save(true, `Imported ${addedCount} tabs into ${win.name}!${skippedMsg}`);
         render();
         await checkIncognitoPermission();
     } catch (e) {

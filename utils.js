@@ -4,14 +4,14 @@
  */
 
 const defaultConfig = [
-    { url: "https://www.wikipedia.org/", pinned: true, muted: false, focus: true },
-    { url: "https://www.wiktionary.org/", pinned: false, muted: true, focus: false }
+    { url: "https://www.wikipedia.org/", pinned: true, muted: false, focus: false },
+    { url: "https://www.wikipedia.org/", pinned: false, muted: false, focus: true }
 ];
 
 const defaultWindows = [
     {
         id: "win-1",
-        name: "Window 1",
+        name: "Window",
         tabs: defaultConfig,
         incognito: false
     }
@@ -105,7 +105,7 @@ function migrateStorageConfig(data) {
             windows = [
                 {
                     id: "win-1",
-                    name: "Window 1",
+                    name: "Window",
                     tabs: JSON.parse(JSON.stringify(data.savedTabs))
                 }
             ];
